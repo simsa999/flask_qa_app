@@ -23,6 +23,19 @@ def add_new_task(project_id):
         db.session.add(newTask)
         db.session.commit()
         return jsonify(Task.serialize(newTask))
+    
+
+@app.route("/add_new_result_to_task/<int:task_id>", methods=["PUT"])
+@cross_origin()
+def add_new_result(task_id):
+
+    # only to get 404 if the project do not exist
+    task = Task.query.get_or_404(task_id)
+    if request.method == "PUT":
+        data = request.get_json()
+        task.result = data["result"]
+        db.session.commit()
+        return jsonify(Task.serialize(task))
 
 
 @app.route("/get_all_tasks", methods=['GET'])

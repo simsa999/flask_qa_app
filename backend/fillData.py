@@ -14,17 +14,17 @@ print(x.text)
 ############################## adding new projects ##############################
 x = requests.post(url + '/signup', headers=headers, json={
     "email": "test@gmail.com",
-    "name": "Andrea",
+    "name": "Emma",
     "role": "User",
     "unit": "test unit",
-    "jobTitle": "undersköterska"
+    "jobTitle": "Sjuksköterska"
 })
 x = requests.post(url + '/signup', headers=headers, json={
     "email": "test2@gmail.com",
     "name": "test2",
     "role": "Admin",
     "unit": "test unit",
-    "jobTitle": "undersköterska"
+    "jobTitle": "Undersköterska"
 })
 x = requests.post(url + '/signup', headers=headers, json={
     "email": "test3@gmail.com",
@@ -38,7 +38,7 @@ x = requests.post(url + '/signup', headers=headers, json={
     "name": "test4",
     "role": "User",
     "unit": "test unit",
-    "jobTitle": "undersköterska"
+    "jobTitle": "Undersköterska"
 })
 
 h = requests.post(url + '/login', headers=headers, json={"user_id": 1})
@@ -47,21 +47,68 @@ token = response_data.get("token", "")
 headers = {'Content-Type': 'application/json', "Authorization": "Bearer " + token}
 read_responses.append(x)
 # change 'get' to 'post' or 'put' when applicable
-x = requests.post(url + '/add_new_category', headers=headers, json={
-    "categoryName": "option 1"
-})
-read_responses.append(x)
-x = requests.post(url + '/add_new_category', headers=headers, json={
-    "categoryName": "option 2"
-})
-read_responses.append(x)
-x = requests.post(url + '/add_new_category', headers=headers, json={
-    "categoryName": "option 3"
-})
-read_responses.append(x)
-x = requests.post(url + '/add_new_category', headers=headers, json={
-    "categoryName": "option 4"
-})
+# x = requests.post(url + '/add_new_category', headers=headers, json={
+#     "categoryName": "Akutvård"
+# })
+# read_responses.append(x)
+# x = requests.post(url + '/add_new_category', headers=headers, json={
+#     "categoryName": "Anamnestagning"
+# })
+# read_responses.append(x)
+# x = requests.post(url + '/add_new_category', headers=headers, json={
+#     "categoryName": "Arbetsmiljö"
+# })
+# read_responses.append(x)
+# x = requests.post(url + '/add_new_category', headers=headers, json={
+#     "categoryName": "Barn- och ungdomshälsa"
+# })
+options = [
+    'Akutvård',
+    'Anamnestagning',
+    'Arbetsmiljö',
+    'Barn- och ungdomshälsa',
+    'Cancersjukdomar',
+    'Endokrina sjukdomar',
+    'Fallrisk',
+    'Hemsjukvård',
+    'Hjärt- och kärlsjukdomar',
+    'Hud- och könssjukdomar',
+    'Infektionssjukdomar',
+    'Kirurgi och plastikkirurgi',
+    'Kvinnosjukdomar och förlossning',
+    'Levnadsvanor',
+    'Lung- och allergisjukdomar',
+    'Mag- och tarmsjukdomar',
+    'Medicinsk diagnostik',
+    'Munhälsa',
+    'Nervsystemets sjukdomar',
+    'Njur- och urinvägssjukdomar',
+    'Nutrition',
+    'Omvårdnad',
+    'Palliativ vård',
+    'Patientsäkerhet',
+    'Perioperativ vård, intensivvård och transplantation',
+    'Personcentrerad vård',
+    'Primärvård',
+    'Psykisk hälsa',
+    'Rehabilitering, habilitering och försäkringsmedicin',
+    'Reumatiska sjukdomar',
+    'Rutiner',
+    'Rörelseorganens sjukdomar',
+    'Slutenvård',
+    'Specialistvård',
+    'Statustagning',
+    'Sällsynta sjukdomar',
+    'Tandvård',
+    'Vårddokumentation',
+    'Vårdhygien',
+    'Ögonsjukdomar',
+    'Öppenvård'
+]
+
+for category_name in options:
+    response = requests.post(url + '/add_new_category', headers=headers, json={"categoryName": category_name})
+
 read_responses.append(x)
 
 x = requests.post(url + '/add_new_project', headers=headers, json={
@@ -342,6 +389,57 @@ read_responses.append(requests.post(url + '/add_new_logbook' , headers = headers
 read_responses.append(requests.put(url + '/specify_users_for_task/1' , headers = headers, json = {
     "users": [1,2]
          
+}))
+
+read_responses.append(requests.post(url + '/add_new_measurement/1' , headers = headers, json = {
+    "name": "Antal intervjuer hållna",
+    "unit": "st",
+    "frequencyAmount":  "1",
+    "frequencyInterval": 'vecka',
+}))
+
+read_responses.append(requests.post(url + '/add_new_measurement/1' , headers = headers, json = {
+    "name": "Antal deltagare",
+    "unit": "st",
+    "frequencyAmount":  "1",
+    "frequencyInterval": 'månad',
+}))
+
+read_responses.append(requests.post(url + '/add_new_measurement/1' , headers = headers, json = {
+    "name": "Väntetid",
+    "unit": "min",
+    "frequencyAmount":  "3",
+    "frequencyInterval": 'vecka',
+}))
+
+read_responses.append(requests.post(url + '/add_new_measurement_child/1' , headers = headers, json = {
+    "value": "1",
+}))
+
+read_responses.append(requests.post(url + '/add_new_measurement_child/1' , headers = headers, json = {
+    "value": "2",
+}))
+
+read_responses.append(requests.post(url + '/add_new_measurement_child/1' , headers = headers, json = {
+    "value": "3",
+}))
+
+read_responses.append(requests.post(url + '/add_new_measurement_child/1' , headers = headers, json = {
+    "value": "4",
+}))
+
+read_responses.append(requests.post(url + '/add_new_measurement_child/1' , headers = headers, json = {
+    "value": "5",
+}))
+
+read_responses.append(requests.post(url + '/add_new_link/1' , headers = headers, json = {
+    "title": "google.com",
+    "url": "https://www.google.com/",
+}))
+
+read_responses.append(requests.post(url + '/add_new_link/1' , headers = headers, json = {
+    "title": "regionostergotland.se",
+    "url": "https://www.regionostergotland.se/ro",
 }))
 
 for response in read_responses:

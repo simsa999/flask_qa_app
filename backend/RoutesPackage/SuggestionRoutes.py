@@ -33,6 +33,7 @@ def add_new_suggestion():
 
 
 @app.route("/get_all_suggestions", methods=['GET'])
+@cross_origin()
 def get_all_suggestions():
     if request.method == 'GET':
         suggestion = []
@@ -66,6 +67,16 @@ def get_all_utkast():
         user = get_jwt_identity()
         user = user['userId']
         suggestionsQuery = Suggestion.query.filter(Suggestion.creator == user, Suggestion.status == statusSuggestion.draft)
+        suggestions = []
+        for s in suggestionsQuery:
+            suggestions.append(Suggestion.serialize(s))
+        return jsonify(suggestions)
+
+@app.route("/get_all_published_suggestions", methods=["GET"])
+@cross_origin()
+def get_all_published():
+    if request.method == 'GET':
+        suggestionsQuery = Suggestion.query.filter(Suggestion.status == statusSuggestion.published)
         suggestions = []
         for s in suggestionsQuery:
             suggestions.append(Suggestion.serialize(s))

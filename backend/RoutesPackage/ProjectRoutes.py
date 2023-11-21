@@ -83,9 +83,14 @@ def edit_delete_get_project(project_id):
             project.measurments = data["measurements"]
         if 'timeLine' in keys_list:
             project.timeLine = data['timeLine']
+        
         if 'deadline' in keys_list:
-            project.deadline = datetime.strptime(
-                data["deadline"], '%Y-%m-%d %H:%M:%S')
+            if data["deadline"] != 'inget datum':
+                project.deadline = datetime.strptime(
+                    data["deadline"], '%Y-%m-%d %H:%M:%S')
+            if data["startTime"] != 'inget datum':
+                project.startTime = datetime.strptime(
+                    data["startTime"], '%Y-%m-%d %H:%M:%S')
         if 'importance' in keys_list:
             project.importance = data["importance"]
         if 'difference' in keys_list:
@@ -113,6 +118,10 @@ def edit_delete_get_project(project_id):
             #solve a function
             #project.users = data["users"]
             abort(400, 'Users not implemented yet')
+        if 'evaluation' in keys_list:
+            project.evaluation = data['evaluation']
+        if 'evaluationExplanation' in keys_list:
+            project.evaluationExplanation = data['evaluationExplanation']
         if 'status' in keys_list:
             if data["status"] == 'Utkast':
                 project.status = statusProject.utkast
@@ -169,6 +178,16 @@ def get_all_project_drafts_by_user():
             projects.append(p.serialize())
         return jsonify(projects)
     
+@app.route("/get_all_projects_in_unit/<string:unit>", methods=["GET"])
+@cross_origin()
+def get_all_projects_in_unit(unit):
+    if request.method == 'GET':
+        projects = []
+        projectsQuery = Project.query.filter_by(unit=unit).all()
+        for p in projectsQuery: 
+            projects.append(p.serialize())
+        return jsonify(projects)
+
 
 #helpfunctions for project
 #write a functions that notices all users on a project when the status changes

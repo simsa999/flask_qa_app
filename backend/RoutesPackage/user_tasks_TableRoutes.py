@@ -65,6 +65,9 @@ def specify_users_for_task(task_id):
             user = User.query.get_or_404(user_id)
             if user not in task.users:
                 task.users.append(user)
-           
+            if user in current_users:
+                notification = Notification(userId=user_id, projectId=task.project.projectId, message="Du har lagts till i uppgiften \"" + task.taskName + "\" i förbättringsarbetet \"" + task.project.title + "\"")
+                db.session.add(notification)
+
         db.session.commit()
         return jsonify(task.serialize())

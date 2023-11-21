@@ -7,10 +7,48 @@ from datetime import datetime
 
 # Enum classes, Role, ProjectRole, statusProject, statusTask --Felix
 class ProjectCategory(Enum):
-    option1 = 'option 1'
-    option2 = 'option 2'
-    option3 = 'option 3'
-    option4 = 'option 4'
+    option1 = 'Akutvård'
+    option2 = 'Anamnestagning'
+    option3 = 'Arbetsmiljö'
+    option4 = 'Barn- och ungdomshälsa'
+    option5 = 'Cancersjukdomar'
+    option6 = 'Endokrina sjukdomar'
+    option7 = 'Fallrisk'
+    option8 = 'Hemsjukvård'
+    option9 = 'Hjärt- och kärlsjukdomar'
+    option10 = 'Hud- och könssjukdomar'
+    option11 = 'Infektionssjukdomar'
+    option12 = 'Kirurgi och plastikkirurgi'
+    option13 = 'Kvinnosjukdomar och förlossning'
+    option14 = 'Levnadsvanor'
+    option15 = 'Lung- och allergisjukdomar'
+    option16 = 'Mag- och tarmsjukdomar'
+    option17 = 'Medicinsk diagnostik'
+    option18 = 'Munhälsa'
+    option19 = 'Nervsystemets sjukdomar'
+    option20 = 'Njur- och urinvägssjukdomar'
+    option21 = 'Nutrition'
+    option22 = 'Omvårdnad'
+    option23 = 'Palliativ vård'
+    option24 = 'Patientsäkerhet'
+    option25 = 'Perioperativ vård, intensivvård och transplantation'
+    option26 = 'Personcentrerad vård'
+    option27 = 'Primärvård'
+    option28 = 'Psykisk hälsa'
+    option29 = 'Rehabilitering, habilitering och försäkringsmedicin'
+    option30 = 'Reumatiska sjukdomar'
+    option31 = 'Rutiner'
+    option32 = 'Rörelseorganens sjukdomar'
+    option33 = 'Slutenvård'
+    option34 = 'Specialistvård'
+    option35 = 'Statustagning'
+    option36 = 'Sällsynta sjukdomar'
+    option37 = 'Tandvård'
+    option38 = 'Vårddokumentation'
+    option39 = 'Vårdhygien'
+    option40 = 'Ögonsjukdomar'
+    option41 = 'Öppenvård'
+
 
 
 class Role(Enum):
@@ -43,7 +81,7 @@ class statusTask(Enum):
 class statusSuggestion(Enum):
     draft = 'Draft'
     published = 'Published'
-    archived = 'Archived'
+    archived = 'Archived'    
 
 # Tables:
 
@@ -156,6 +194,7 @@ class Project(db.Model):
     difference = db.Column(db.String, nullable=False)
     requirements = db.Column(db.String, nullable=False)
     # Maybe have a separate class for this  --Felix
+    measurementsChildren = db.relationship('Measurementparent', backref='project', lazy=True)
     measurements = db.Column(db.String, nullable=True)
     outcome = db.Column(db.String, nullable=True)
     unit = db.Column(db.String, nullable=True)
@@ -166,6 +205,10 @@ class Project(db.Model):
     documentation = db.relationship('Document', backref='project', lazy=True)
     deadline = db.Column(db.DateTime, nullable=True)
     startTime = db.Column(db.DateTime, nullable=True)
+    links = db.relationship('Link', backref='project', lazy=True)
+
+    evaluationExplanation = db.Column(db.String, nullable=True)
+    evaluation = db.Column(db.String, nullable=True)
 
     def serialize(self):
         task = []
@@ -189,7 +232,7 @@ class Project(db.Model):
         return dict(projectId=self.projectId, title=self.title, users=user, tasks=task, creator_id=self.creator_id,
                     importance=self.importance, difference=self.difference, requirements=self.requirements, measurements=self.measurements,
                     outcome=self.outcome, unit=self.unit, how_often=self.how_often, status=str(self.status.value), documnentation=self.documentation, deadline=self.deadline,
-                    categories=c, startTime=self.startTime)
+                    categories=c, startTime=self.startTime, evaluationExplanation=self.evaluationExplanation, evaluation=self.evaluation)
 
     # Function that populates table user_project_task_role:
     def populate_user_project_role(self, user, role):
@@ -208,10 +251,11 @@ class Task(db.Model):
     deadline = db.Column(db.DateTime, default=datetime.utcnow)
     project_id = db.Column(db.Integer, db.ForeignKey('project.projectId'), nullable=False)
     users = db.relationship("User", secondary=user_task, back_populates="tasks")
+    result = db.Column(db.String, nullable = True)
 
     def serialize(self): 
         return dict(taskId = self.taskId, taskName = self.taskName, taskDescription = self.taskDescription,
-                    status = str(self.status.value), deadline = self.deadline, project_id = self.project_id, users = [u.serialize() for u in self.users])
+                    status = str(self.status.value), deadline = self.deadline, project_id = self.project_id, result = self.result, users = [u.serialize() for u in self.users])
 
 
 class Notification(db.Model):
@@ -236,6 +280,15 @@ class Document(db.Model):
     def serialize(self):
         return dict(documentId=self.documentId, documentName=self.documentName, project_id=self.project_id)
 
+class Link(db.Model):
+    linkId = db.Column(db.Integer, primary_key=True)
+    linkTitle = db.Column(db.String, nullable=False)
+    url = db.Column(db.String, nullable=False)
+    project_id = db.Column(db.Integer, db.ForeignKey(
+        'project.projectId'), nullable=False)
+
+    def serialize(self):
+        return dict(id=self.linkId, title=self.linkTitle, url = self.url, project_id=self.project_id)
 
 class Suggestion(db.Model):
     suggestionId = db.Column(db.Integer, primary_key=True)
@@ -253,7 +306,7 @@ class Suggestion(db.Model):
         'user.userId'), nullable=False)
 
     def serialize(self):
-        return dict(id=self.suggestionId, name=self.name,
+        return dict(suggestionId=self.suggestionId, name=self.name,
                     descriptionImportance=self.descriptionImportance,
                     descriptionImpact=self.descriptionImpact,
                     descriptionRequirements=self.descriptionRequirements, 
@@ -283,3 +336,25 @@ class LogBook(db.Model):
 
     def serialize(self):
         return dict(logBookId=self.logBookId, logBookTitle=self.logBookTitle, logBookColor=self.logBookColor, logBookDescription=self.logBookDescription, user=self.user, timeStamp=self.timeStamp, project_id=self.project_id)
+
+class Measurementparent(db.Model):
+    measurementParentId = db.Column(db.Integer, primary_key=True)
+    measurementParentName = db.Column(db.String, nullable=False)
+    measurementParentUnit = db.Column(db.String, nullable=False)
+    measurementParentFrequencyAmount = db.Column(db.Integer, nullable=False)
+    measurementParentFrequencyInterval = db.Column(db.Integer, nullable=False)
+    measurementChilds = db.relationship('Measurementchild', backref='measurementparent', lazy=True)
+    project_id = db.Column(db.Integer, db.ForeignKey('project.projectId'), nullable=False)
+
+    def serialize(self):
+        return dict(measurementId=self.measurementParentId, name=self.measurementParentName, unit=self.measurementParentUnit, children=[m.serialize() for m in self.measurementChilds], project_id=self.project_id, frequencyAmount=self.measurementParentFrequencyAmount, frequencyInterval=self.measurementParentFrequencyInterval)
+    
+class Measurementchild(db.Model):
+    measurementChildId = db.Column(db.Integer, primary_key=True)
+    measurementChildValue = db.Column(db.Float, nullable=False)
+    measurementChildTime = db.Column(db.DateTime, default=datetime.utcnow)
+    measurementParentId = db.Column(db.Integer, db.ForeignKey('measurementparent.measurementParentId'), nullable=False)
+
+    def serialize(self):
+        date = self.measurementChildTime.strftime("%Y-%m-%d")
+        return dict(measurementId=self.measurementChildId, value=self.measurementChildValue, time=date)

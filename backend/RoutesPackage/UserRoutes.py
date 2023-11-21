@@ -114,3 +114,13 @@ def login():
             return jsonify(dict(user.serialize(), token=token))
         else:
             return jsonify({"message": "Invalid credentials"}), 401
+        
+@app.route("/logged_in_user", methods=["GET"])
+@cross_origin()
+@jwt_required()
+def logged_in_user():
+    if request.method == "GET":
+        user = get_jwt_identity()
+        user = user['userId']
+        user = User.query.get_or_404(user)
+        return jsonify(user.serialize())
