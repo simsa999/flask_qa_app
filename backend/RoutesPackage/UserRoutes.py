@@ -1,4 +1,5 @@
 from RoutesInterfaceIn import *
+from datetime import datetime, timedelta
 
 ##################################### AppRoute for user #############################################################
 
@@ -54,6 +55,11 @@ def edit_delete_get_user(user_id):
             user.name = data["name"]
         if 'email' in keys_list:
             user.email = data["email"]
+        if 'phoneNumber' in keys_list:
+            if len(data["phoneNumber"]) == 9:
+                user.phoneNumber = '+46' + data["phoneNumber"]
+            if len(data["phoneNumber"]) == 10:
+                user.phoneNumber = data["phoneNumber"]
         if 'profileIcon' in keys_list:
             user.profileIcon = data["profileIcon"]
         if 'unit' in keys_list:
@@ -79,6 +85,12 @@ def edit_delete_get_user(user_id):
 def signup():
     if request.method == "POST":
         data = request.get_json()
+        if not data["email"]:
+            return jsonify({"message": "Email is required"}), 400
+        if not data["password"]:
+            return jsonify({"message": "Password is required"}), 400
+        if not data["name"]:
+            return jsonify({"message": "Name is required"}), 400
         existing_user = User.query.filter_by(email=data["email"]).first()
         if existing_user:
             return jsonify({"message": "Email already in use"}), 400
@@ -89,15 +101,25 @@ def signup():
             else:
                 role = Role.user
 
+        phoneNumber=None
+        if 'phoneNumber' in keys_list:
+            if len(data["phoneNumber"]) == 9:
+                phoneNumber = '+46' + data["phoneNumber"]
+            elif len(data["phoneNumber"]) == 10:
+                phoneNumber = data["phoneNumber"]
+
+
+
         new_user = User(
             name=data["name"],
             email=data["email"],
             role=role,
             unit=data["unit"],
             jobTitle=data["jobTitle"],
+            phoneNumber=phoneNumber,
 
         )
-        # new_user.set_password(data["password"])
+        new_user.set_password(data["password"])
         db.session.add(new_user)
         db.session.commit()
         return jsonify(new_user.serialize()), 200
@@ -108,12 +130,17 @@ def signup():
 def login():
     if request.method == "POST":
         data = request.get_json()
-        user = User.query.get(data["user_id"])
+        user = User.query.filter_by(email=data["email"]).first()
+        password = data["password"]
         if user:
-            token = create_access_token(identity=user.serialize())
-            return jsonify(dict(user.serialize(), token=token))
+            if bcrypt.check_password_hash(user.password_hash, password):
+                expiration_delta = timedelta(hours=2)
+                token = create_access_token(identity=user.serialize(), expires_delta=expiration_delta)
+                return jsonify(dict(user.serialize(), token=token))
+            else:
+                return jsonify({"message": "Invalid password"}), 401
         else:
-            return jsonify({"message": "Invalid credentials"}), 401
+            return jsonify({"message": "Invalid email"}), 401
         
 @app.route("/logged_in_user", methods=["GET"])
 @cross_origin()

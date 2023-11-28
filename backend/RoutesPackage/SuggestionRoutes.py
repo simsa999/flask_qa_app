@@ -26,7 +26,7 @@ def add_new_suggestion():
         db.session.add(newSuggestion)
         if 'categories' in keys_list:
             for category in data["categories"]:
-                newSuggestion.categories.append(Category.query.get_or_404(category))
+                newSuggestion.categories.append(Category.query.get_or_404(category.get("categoryId")))
         db.session.commit()
         return jsonify({"suggestionId": newSuggestion.suggestionId})
 
@@ -126,8 +126,7 @@ def put_suggestion(data, suggestion, stat):
 
 def create_project_from_suggestion(suggestion):
     newProject = Project(title=suggestion.name, creator_id=suggestion.creator, importance=suggestion.descriptionImportance,
-                             difference=suggestion.descriptionImpact, requirements=suggestion.descriptionRequirements, measurements=suggestion.descriptionRequirements,
-                             outcome=suggestion.descriptionRequirements, unit='N/A',
+                             difference=suggestion.descriptionImpact, requirements=suggestion.descriptionRequirements, unit='N/A',
                              how_often='N/A', status=statusProject.utkast, categories = suggestion.categories)
     return newProject
 

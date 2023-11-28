@@ -4,6 +4,7 @@ from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy import select
 from flask_bcrypt import Bcrypt
+from celery import Celery
 
 
 import os
@@ -20,3 +21,6 @@ app.config['CORS_HEADERS'] = 'Content-Type'
 
 db = SQLAlchemy(app)
 bcrypt = Bcrypt(app)
+
+#Utkommenterat nedanför är för att kunna använda Redis och Celery
+#from RedisCeleryConfig import celery

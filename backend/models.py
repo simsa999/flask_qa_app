@@ -19,35 +19,41 @@ class ProjectCategory(Enum):
     option10 = 'Hud- och könssjukdomar'
     option11 = 'Infektionssjukdomar'
     option12 = 'Kirurgi och plastikkirurgi'
-    option13 = 'Kvinnosjukdomar och förlossning'
-    option14 = 'Levnadsvanor'
-    option15 = 'Lung- och allergisjukdomar'
-    option16 = 'Mag- och tarmsjukdomar'
-    option17 = 'Medicinsk diagnostik'
-    option18 = 'Munhälsa'
-    option19 = 'Nervsystemets sjukdomar'
-    option20 = 'Njur- och urinvägssjukdomar'
-    option21 = 'Nutrition'
-    option22 = 'Omvårdnad'
-    option23 = 'Palliativ vård'
-    option24 = 'Patientsäkerhet'
-    option25 = 'Perioperativ vård, intensivvård och transplantation'
-    option26 = 'Personcentrerad vård'
-    option27 = 'Primärvård'
-    option28 = 'Psykisk hälsa'
-    option29 = 'Rehabilitering, habilitering och försäkringsmedicin'
-    option30 = 'Reumatiska sjukdomar'
-    option31 = 'Rutiner'
-    option32 = 'Rörelseorganens sjukdomar'
-    option33 = 'Slutenvård'
-    option34 = 'Specialistvård'
-    option35 = 'Statustagning'
-    option36 = 'Sällsynta sjukdomar'
-    option37 = 'Tandvård'
-    option38 = 'Vårddokumentation'
-    option39 = 'Vårdhygien'
-    option40 = 'Ögonsjukdomar'
-    option41 = 'Öppenvård'
+    option13 = 'Kompentensutveckling'
+    option14 = 'Kvinnosjukdomar och förlossning'
+    option15 = 'Levnadsvanor'
+    option16 = 'Lung- och allergisjukdomar'
+    option17 = 'Mag- och tarmsjukdomar'
+    option18 = 'Medicinsk diagnostik'
+    option19 = 'Munhälsa'
+    option20 = 'Nervsystemets sjukdomar'
+    option21 = 'Njur- och urinvägssjukdomar'
+    option22 = 'Nutrition'
+    option23 = 'Omvårdnad'
+    option24 = 'Palliativ vård'
+    option25 = 'Patientinformation'
+    option26 = 'Patientmedverkan'
+    option27 = 'Patientsäkerhet'
+    option28 = 'Perioperativ vård, intensivvård och transplantation'
+    option29 = 'Personcentrerad vård'
+    option30 = 'Primärvård'
+    option31 = 'Psykisk hälsa'
+    option32 = 'Rehabilitering, habilitering och försäkringsmedicin'
+    option33 = 'Reumatiska sjukdomar'
+    option34 = 'Rutiner'
+    option35 = 'Rörelseorganens sjukdomar'
+    option36 = 'Slutenvård'
+    option37 = 'Specialistvård'
+    option38 = 'Statustagning'
+    option39 = 'Sällsynta sjukdomar'
+    option40 = 'Tandvård'
+    option41 = 'Utbildning'
+    option42 = 'Vårddokumentation'
+    option43 = 'Vårdhygien'
+    option44 = 'Ögonsjukdomar'
+    option45 = 'Öppenvård'
+    option46 = 'Övrigt'
+
 
 
 
@@ -145,7 +151,8 @@ class User(db.Model):
     name = db.Column(db.String, nullable=False)
     email = db.Column(db.String, nullable=False, unique=True)
     getEmail = db.Column(db.Boolean, nullable=False, default=True)
-   ## password_hash = db.Column(db.String, nullable=False)
+    phoneNumber = db.Column(db.String, nullable=True) #I guess it is optional to save phone number
+    password_hash = db.Column(db.String, nullable=False)
     # Path to picture
     profileIcon = db.Column(db.String, nullable=True)
     unit = db.Column(db.String, nullable=True)
@@ -168,11 +175,11 @@ class User(db.Model):
             idea.append(Suggestion.serialize(suggestion))
         return dict(userId=self.userId, name=self.name, email=self.email, profileIcon=self.profileIcon, unit=self.unit,
                     role=str(self.role.value), jobTitle=self.jobTitle, notifications=self.notifications, suggestions=idea,
-                    created_projects=c_p)
+                    created_projects=c_p, phoneNumber=self.phoneNumber)
 
     def serialize(self):
         return dict(userId=self.userId, name=self.name, email=self.email, profileIcon=self.profileIcon, unit=self.unit,
-                    role=str(self.role.value), jobTitle=self.jobTitle)
+                    role=str(self.role.value), jobTitle=self.jobTitle, phoneNumber=self.phoneNumber)
 
     def set_password(self, password):
         self.password_hash = bcrypt.generate_password_hash(
@@ -195,8 +202,6 @@ class Project(db.Model):
     requirements = db.Column(db.String, nullable=False)
     # Maybe have a separate class for this  --Felix
     measurementsChildren = db.relationship('Measurementparent', backref='project', lazy=True)
-    measurements = db.Column(db.String, nullable=True)
-    outcome = db.Column(db.String, nullable=True)
     unit = db.Column(db.String, nullable=True)
     how_often = db.Column(db.String, nullable=True)
     # timeLine = db.Column(db.String, nullable = True) ##insert dates with , ex. "2023-04-10, 2023-05-10" --Felix
@@ -208,6 +213,7 @@ class Project(db.Model):
     links = db.relationship('Link', backref='project', lazy=True)
 
     evaluationExplanation = db.Column(db.String, nullable=True)
+    evaluationSummary = db.Column(db.String, nullable=True)
     evaluation = db.Column(db.String, nullable=True)
 
     def serialize(self):
@@ -230,9 +236,9 @@ class Project(db.Model):
             c.append(Category.serialize(category))
 
         return dict(projectId=self.projectId, title=self.title, users=user, tasks=task, creator_id=self.creator_id,
-                    importance=self.importance, difference=self.difference, requirements=self.requirements, measurements=self.measurements,
-                    outcome=self.outcome, unit=self.unit, how_often=self.how_often, status=str(self.status.value), documnentation=self.documentation, deadline=self.deadline,
-                    categories=c, startTime=self.startTime, evaluationExplanation=self.evaluationExplanation, evaluation=self.evaluation)
+                    importance=self.importance, difference=self.difference, requirements=self.requirements,
+                    unit=self.unit, how_often=self.how_often, status=str(self.status.value), documnentation=self.documentation, deadline=self.deadline,
+                    categories=c, startTime=self.startTime, evaluationExplanation=self.evaluationExplanation, evaluation=self.evaluation, evaluationSummary=self.evaluationSummary)
 
     # Function that populates table user_project_task_role:
     def populate_user_project_role(self, user, role):
@@ -248,14 +254,13 @@ class Task(db.Model):
     taskName = db.Column(db.String, nullable = False)
     taskDescription = db.Column(db.String, nullable = False)
     status = db.Column(db.Enum(statusTask), nullable = False, default=statusTask.not_yet_started)
-    deadline = db.Column(db.DateTime, default=datetime.utcnow)
     project_id = db.Column(db.Integer, db.ForeignKey('project.projectId'), nullable=False)
     users = db.relationship("User", secondary=user_task, back_populates="tasks")
     result = db.Column(db.String, nullable = True)
 
     def serialize(self): 
         return dict(taskId = self.taskId, taskName = self.taskName, taskDescription = self.taskDescription,
-                    status = str(self.status.value), deadline = self.deadline, project_id = self.project_id, result = self.result, users = [u.serialize() for u in self.users])
+                    status = str(self.status.value), project_id = self.project_id, result = self.result, users = [u.serialize() for u in self.users])
 
 
 class Notification(db.Model):

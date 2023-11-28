@@ -1,6 +1,8 @@
 from RoutesInterfaceIn import *
+#from CeleryConfig import schedule_task
 
 ##################################### AppRoute for adding Measurement #############################################################
+
 
 @app.route("/add_new_measurement/<int:project_id>", methods=["POST"])
 @cross_origin()
@@ -9,11 +11,24 @@ def add_new_measurement(project_id):
     if request.method == "POST":
 
         data = request.get_json()
-        newMeasurement = Measurementparent(measurementParentName=data["name"], measurementParentUnit=data["unit"], measurementParentFrequencyAmount = data["frequencyAmount"], measurementParentFrequencyInterval = data["frequencyInterval"], project_id=project_id)
+        if data["frequencyInterval"] == "minut" or data["frequencyInterval"] =="Minut":
+            interval = 60
+        elif data["frequencyInterval"] == "dag" or data["frequencyInterval"] =="Dag":
+            interval = 60*60*24
+        elif data["frequencyInterval"] == "vecka" or data["frequencyInterval"] =="Vecka":
+            interval = 60*60*24*7
+        elif data["frequencyInterval"] == "månad" or data["frequencyInterval"] =="Månad":
+            interval = 60*60*24*30
+        elif data["frequencyInterval"] == "år" or data["frequencyInterval"] =="År":
+            interval = 60*60*24*365
+        else:
+            interval=0
+        newMeasurement = Measurementparent(measurementParentName=data["name"], measurementParentUnit=data["unit"], measurementParentFrequencyAmount = data["frequencyAmount"], measurementParentFrequencyInterval = interval, project_id=project_id)
         project = Project.query.get_or_404(project_id)
         project.measurementsChildren.append(newMeasurement)
         db.session.add(newMeasurement)
         db.session.commit()
+        #schedule_task(newMeasurement.measurementParentId)
         return jsonify(Measurementparent.serialize(newMeasurement))
     
 @app.route("/get_all_measurements/<int:project_id>", methods=['GET'])
@@ -25,6 +40,7 @@ def get_all_measurements(project_id):
         measurements = project.measurementsChildren
         for m in measurements:
             measurement.append(Measurementparent.serialize(m))
+            
         return jsonify(measurement)
     
 @app.route("/measurement/<int:measurement_id>", methods=["GET", "PUT", "DELETE"])
@@ -43,9 +59,21 @@ def edit_delete_get_measurement(measurement_id):
         if 'frequencyAmount' in keys_list:
             measurement.measurementParentFrequencyAmount = data["frequencyAmount"]
         if 'frequencyInterval' in keys_list:
-            measurement.measurementParentFrequencyInterval = data["frequencyInterval"]
+            if data["frequencyInterval"] == "minut" or data["frequencyInterval"] =="Minut":
+                interval = 60
+            elif data["frequencyInterval"] == "dag" or data["frequencyInterval"] =="Dag":
+                interval = 60*60*24
+            elif data["frequencyInterval"] == "vecka" or data["frequencyInterval"] =="Vecka":
+                interval = 60*60*24*7
+            elif data["frequencyInterval"] == "månad" or data["frequencyInterval"] =="Månad":
+                interval = 60*60*24*30
+            elif data["frequencyInterval"] == "år" or data["frequencyInterval"] =="År":
+                interval = 60*60*24*365
+            else:
+                interval=0
+            measurement.measurementParentFrequencyInterval = interval
         if 'project' in keys_list:
-            measurement.project = data["project"]
+            measurement.project_id = data["project"]
         db.session.commit()
         return jsonify(Measurementparent.serialize(measurement))
     elif request.method == 'DELETE':
@@ -63,11 +91,16 @@ def add_new_measurement_child(measurement_id):
         if request.method == "POST":
     
             data = request.get_json()
-            newMeasurement = Measurementchild(measurementChildValue=data["value"], measurementParentId=measurement_id)
+            if data['date'] != "":
+                date_object = datetime.strptime(data['date'], '%Y-%m-%d')
+                newMeasurement = Measurementchild(measurementChildValue=data["value"], measurementChildTime=date_object, measurementParentId=measurement_id)
+            else:
+                newMeasurement = Measurementchild(measurementChildValue=data["value"], measurementParentId=measurement_id)
             measurement = Measurementparent.query.get_or_404(measurement_id)
             measurement.measurementChilds.append(newMeasurement)
             db.session.add(newMeasurement)
             db.session.commit()
+            #schedule_task(measurement.measurementParentId)
             return jsonify(Measurementchild.serialize(newMeasurement))
         
 @app.route("/get_all_measurements_child/<int:measurement_id>", methods=['GET'])
@@ -80,3 +113,4 @@ def get_all_measurements_child(measurement_id):
         for m in measurements:
             measurement.append(Measurementchild.serialize(m))
         return jsonify(measurement)
+    

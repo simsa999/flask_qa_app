@@ -11,8 +11,7 @@ def add_new_project():
         keys_list = list(data.keys())
         user = User.query.get_or_404(data["creator_id"])
         newProject = Project(title=data["title"], creator_id=user.userId, importance=data["importance"],
-                             difference=data["difference"], requirements=data["requirements"], measurements=data["measurements"],
-                             outcome=data["outcome"], unit=data["unit"],
+                             difference=data["difference"], requirements=data["requirements"], unit=data["unit"],
                              how_often=data["how_often"])
 
         if data["deadline"] != 'inget datum':
@@ -41,7 +40,12 @@ def add_new_project():
                 newProject.status = statusProject.archived
             
 
-        
+        if 'evaluation' in keys_list:
+            newProject.evaluation = data['evaluation']
+        if 'evaluationSummary' in keys_list:
+            newProject.evaluationSummary = data['evaluationSummary']
+        if 'evaluationExplanation' in keys_list:
+            newProject.evaluationExplanation = data['evaluationExplanation']
         # print(newProject)
         for category in data["categories"]:
             newProject.categories.append(Category.query.get_or_404(category))
@@ -75,12 +79,8 @@ def edit_delete_get_project(project_id):
             project.title = data["title"]
         if 'unit' in keys_list:
             project.unit = data["unit"]
-        if 'outcome' in keys_list:
-            project.outcome = data["outcome"]
         if 'method' in keys_list:
             project.method = data['method']
-        if 'measurements' in keys_list:
-            project.measurments = data["measurements"]
         if 'timeLine' in keys_list:
             project.timeLine = data['timeLine']
         
@@ -88,6 +88,7 @@ def edit_delete_get_project(project_id):
             if data["deadline"] != 'inget datum':
                 project.deadline = datetime.strptime(
                     data["deadline"], '%Y-%m-%d %H:%M:%S')
+        if 'startTime' in keys_list:
             if data["startTime"] != 'inget datum':
                 project.startTime = datetime.strptime(
                     data["startTime"], '%Y-%m-%d %H:%M:%S')
@@ -120,6 +121,8 @@ def edit_delete_get_project(project_id):
             abort(400, 'Users not implemented yet')
         if 'evaluation' in keys_list:
             project.evaluation = data['evaluation']
+        if 'evaluationSummary' in keys_list:
+            project.evaluationSummary = data['evaluationSummary']
         if 'evaluationExplanation' in keys_list:
             project.evaluationExplanation = data['evaluationExplanation']
         if 'status' in keys_list:

@@ -11,8 +11,7 @@ def add_new_task(project_id):
     Project.query.get_or_404(project_id)
     if request.method == "POST":
         data = request.get_json()
-        newTask = Task(taskName=data["taskName"], taskDescription=data["taskDescription"], deadline=datetime.strptime(
-            data["deadline"], '%Y-%m-%d %H:%M:%S'), project_id=project_id)
+        newTask = Task(taskName=data["taskName"], taskDescription=data["taskDescription"], project_id=project_id)
         if 'status' in data.keys():
             if data['status'] == 'Not yet Started':
                 newTask.status = statusTask.not_yet_started
@@ -61,9 +60,6 @@ def edit_delete_get_task(task_id):
             task.taskName = data["taskName"]
         if 'taskDescription' in keys_list:
             task.taskDescription = data["taskDescription"]
-        if 'deadline' in keys_list:
-            task.deadline = datetime.strptime(
-                data["deadline"], '%Y-%m-%d %H:%M:%S')
         if 'status' in keys_list:
             if data['status'] == 'Not yet Started':
                 print("hej")
