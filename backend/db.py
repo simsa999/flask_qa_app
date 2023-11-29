@@ -24,7 +24,7 @@ app = Flask(__name__)
 
 app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///' + \
     os.path.join(basedir, 'db.sqlite')
-CORS(app, resources={r"/api/*": {"origins": "http://localhost:3000"}})
+CORS(app, max_age=3600, resources={r"/api/*": {"origins": "http://localhost:3000"}})
 app.config['CORS_HEADERS'] = 'Content-Type'
 
 db = SQLAlchemy(app)
