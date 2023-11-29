@@ -1,3 +1,12 @@
+#####################################################
+#                                                   #
+#                     Company 4                     #
+#    Module for routes and views of Notification    #
+#                                                   #
+#####################################################
+
+
+#Import interface aswell as SMTP, MIME and Threading to send emails async and efficiently
 from RoutesInterfaceIn import *
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
@@ -7,6 +16,10 @@ import threading
 import traceback
 from sqlalchemy.event import listens_for
 
+##################################### AppRoute for notifications #############################################################
+
+
+# Get all notifications for the logged in user
 @app.route("/get_notifications", methods=['GET'])
 @cross_origin()
 @jwt_required()
@@ -18,6 +31,22 @@ def get_notifications():
         notifications.sort(key=lambda x: x['timestamp'], reverse=True)
         return jsonify(notifications)
     
+# Get all notifications for the logged in admin
+@app.route("/get_notifications_admin", methods=['GET'])
+@cross_origin()
+@jwt_required()
+def get_notifications_admin():
+    if request.method == 'GET':
+        userId = get_jwt_identity()['userId']
+        user = User.query.get(userId)
+        if user.role != Role.admin:
+            return jsonify({"error": "You are not authorized to view this page"})
+        notifications = AdminNotification.query.filter_by(userId=userId).filter_by(read=False)
+        notifications = [notification.serialize() for notification in notifications]
+        notifications.sort(key=lambda x: x['timestamp'], reverse=True)
+        return jsonify(notifications)
+    
+# Create a new notification based for a user based on a project
 @app.route("/add_notification/<int:userId>/<int:projectId>", methods=['POST'])
 @cross_origin()
 def add_notification(userId, projectId):
@@ -33,13 +62,14 @@ def add_notification(userId, projectId):
         return jsonify({"error": "Something went wrong"})
         
     
+# Change the read status to true for a notification
 @app.route("/notification/<int:notificationId>", methods=['DELETE'])
 @cross_origin()
 @jwt_required()
 def delete_notification(notificationId):
     if request.method == 'DELETE':
         user = User.query.get(get_jwt_identity()['userId'])
-        notification = Notification.query.get(notificationId)
+        notification = BaseNotification.query.get(notificationId)
         notification.read = True
         if user.userId != notification.userId:
             return jsonify({"error": "You are not authorized to delete this notification"})
@@ -47,16 +77,20 @@ def delete_notification(notificationId):
         db.session.commit()
         return jsonify(notification.serialize())
     
+
+# Observer pattern to send email when a notification is created
 @listens_for(Notification, 'after_insert')
 def send_notification_email_listener(mapper, connection, target):
         send_notification_email_async(target)
 
 
+# Create threads to send emails async
 def send_notification_email_async(target):
     thread = threading.Thread(target=send_notification_email, args=(target,))
     thread.start()
 
 
+# Send email to user
 def send_notification_email(target):
     user_id = target.userId
     project_id = target.projectId
@@ -66,7 +100,6 @@ def send_notification_email(target):
         project = Project.query.get(project_id)
         if user.email:
             try:
-                # send email
                 from_name = "4Bättringsarbete"
                 from_email = "4Battringsarbete@gmail.com"
                 email_password = "gxfgtphimmajzdcl"

@@ -1,8 +1,17 @@
+#####################################################
+#                                                   #
+#                     Company 4                     #
+#   Module for routes and views of Project model    #
+#                                                   #
+#####################################################
+
+
 from RoutesInterfaceIn import *
 
 ##################################### AppRoute for Project #############################################################
 
 
+# Add new project
 @app.route("/add_new_project", methods=["POST"])
 @cross_origin()
 def add_new_project():
@@ -46,16 +55,21 @@ def add_new_project():
             newProject.evaluationSummary = data['evaluationSummary']
         if 'evaluationExplanation' in keys_list:
             newProject.evaluationExplanation = data['evaluationExplanation']
-        # print(newProject)
+
         for category in data["categories"]:
             newProject.categories.append(Category.query.get_or_404(category))
-
+        
         db.session.add(newProject)
+        newTask = Task(taskName="Mäta nuläget", taskDescription="Gör mätning på förbättringsarbetet!", status=statusTask.not_yet_started)
+        newProject.tasks.append(newTask)                                            #Add a "starter" task to the project  
+        db.session.add(newTask)
+
         db.session.commit()
         p = Project.serialize(newProject)
         return jsonify(p)
 
 
+# Get all projects in the database
 @app.route("/get_all_projects", methods=["GET"])
 @cross_origin()
 def get_all_projects():
@@ -66,6 +80,9 @@ def get_all_projects():
             project.append(Project.serialize(p))
         return jsonify(project)
 
+
+# Get, edit or delete a specific project
+# DELETE is not properly implemented because a project should not be deleted
 @app.route("/project/<int:project_id>", methods=["GET", "PUT", "DELETE"])
 @cross_origin()
 def edit_delete_get_project(project_id):
@@ -116,8 +133,7 @@ def edit_delete_get_project(project_id):
                     category = Category.query.get_or_404(category_id)
                     project.categories.append(category)
         if 'users' in keys_list:
-            #solve a function
-            #project.users = data["users"]
+
             abort(400, 'Users not implemented yet')
         if 'evaluation' in keys_list:
             project.evaluation = data['evaluation']
@@ -151,23 +167,25 @@ def edit_delete_get_project(project_id):
         return jsonify("DELETE COMPLETE")
 
 
+# Get all projects that a user is a part of
 @app.route("/get_all_projects_by_user", methods=["GET"])
 @cross_origin()
 @jwt_required()
 def get_all_projects_by_user():
     if request.method == 'GET':
-        user = get_jwt_identity()
-    
-        rowsUserProject = db.session.query(user_project).filter( user_project.c.user_id == user['userId'], ).all()
-        project_ids = [row[1] for row in rowsUserProject]
+        user_id = get_jwt_identity()["userId"]
+        user = User.query.get_or_404(user_id)
         projects = []
-        projectsQuery = Project.query.filter_by(creator_id=user['userId'], status=statusProject.utkast).all()
+
+        projectsQuery = Project.query.filter_by(creator_id=user_id, status=statusProject.utkast).all()
         for p in projectsQuery: 
             projects.append(p.serialize())
-        for p in project_ids: 
-            projects.append(Project.query.get_or_404(p).serialize())
+        for p in user.projects: 
+            projects.append(p.serialize())
         return jsonify(projects)
     
+
+# Get all projects from a user that is a draft
 @app.route("/get_all_project_drafts_by_user", methods=["GET"])
 @cross_origin()
 @jwt_required()
@@ -181,6 +199,8 @@ def get_all_project_drafts_by_user():
             projects.append(p.serialize())
         return jsonify(projects)
     
+
+#Get all projects from a unit
 @app.route("/get_all_projects_in_unit/<string:unit>", methods=["GET"])
 @cross_origin()
 def get_all_projects_in_unit(unit):

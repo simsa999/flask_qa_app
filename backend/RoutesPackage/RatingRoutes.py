@@ -1,8 +1,17 @@
+#####################################################
+#                                                   #
+#                     Company 4                     #
+#   Module for routes and views of Rating model     #
+#                                                   #
+#####################################################
+
+
 from RoutesInterfaceIn import *
 
 ##################################### AppRoute for rating #############################################################
 
-
+# Add new rating
+# Faulty because it does not check if the user has already rated their day that day, so can result in multiple ratings per user per day
 @app.route("/add_new_rating", methods=["POST"])
 @cross_origin()
 @jwt_required()

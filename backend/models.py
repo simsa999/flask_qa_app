@@ -1,8 +1,17 @@
+##########################################
+#                                        #
+#               Company 4                #
+#  Models for database and flask server  #
+#                                        #
+##########################################
+
+
 from flask import Flask
 from flask_sqlalchemy import SQLAlchemy
 from db import db, bcrypt
 from enum import Enum
 from datetime import datetime
+from sqlalchemy import Column, String
 
 
 # Enum classes, Role, ProjectRole, statusProject, statusTask --Felix
@@ -89,18 +98,6 @@ class statusSuggestion(Enum):
     published = 'Published'
     archived = 'Archived'    
 
-# Tables:
-
-
-# This table needs to be populated after, do not know how to make this into variables --Felix
-# user_project_task_role = db.Table('user_project_task_role',
-#                     db.Column('user_id', db.Integer, db.ForeignKey('user.userId'), primary_key =True),
-#                     db.Column('project_id', db.Integer, db.ForeignKey('project.projectId'), primary_key =True),
-#                     db.Column('user_role', db.Enum(ProjectRole)),
-#                     db.Column('task', db.Integer, db.ForeignKey('task.taskId'), nullable = True )
-#                     )
-
-# many to many category and project
 
 project_category = db.Table('project_category',
                             db.Column('project_id', db.Integer, db.ForeignKey(
@@ -126,12 +123,7 @@ user_project = db.Table('user_project',
                             'project.projectId'), primary_key=True),
                         db.Column('user_role', db.Enum(ProjectRole)))
 
-# Many to many users and notifications --Felix
-""" user_notification = db.Table('user_notification',
-                             db.Column('user_id', db.Integer, db.ForeignKey(
-                                 'user.userId'), primary_key=True),
-                             db.Column('notification_id', db.Integer, db.ForeignKey('notification.notificationId'), primary_key=True))
- """
+
 
 # Classes: User, Idea, Notification, Project, Documnet, Task --Felix
 
@@ -151,20 +143,19 @@ class User(db.Model):
     name = db.Column(db.String, nullable=False)
     email = db.Column(db.String, nullable=False, unique=True)
     getEmail = db.Column(db.Boolean, nullable=False, default=True)
-    phoneNumber = db.Column(db.String, nullable=True) #I guess it is optional to save phone number
+    phoneNumber = db.Column(db.String, nullable=True) 
     password_hash = db.Column(db.String, nullable=False)
     # Path to picture
     profileIcon = db.Column(db.String, nullable=True)
     unit = db.Column(db.String, nullable=True)
     jobTitle = db.Column(db.String, nullable=True)
-    #projects = db.relationship('Project', secondary=user_project, lazy='subquery', backref = db.backref('user_projects', lazy=True))
     role = db.Column(db.Enum(Role), nullable=False, default=Role.user)
-    """ notifications = db.relationship(
-        'Notification', secondary=user_notification, lazy='subquery', backref=db.backref('users', lazy=True)) """
     suggestions = db.relationship('Suggestion', backref='user', lazy=True)
     tasks = db.relationship("Task", secondary=user_task,
                             back_populates="users")
     created_projects = db.relationship('Project', backref='user', lazy=True)
+    projects = db.relationship('Project', secondary=user_project,
+                                 back_populates="users", lazy=True)
 
     def serialize(self):
         idea = []
@@ -174,7 +165,7 @@ class User(db.Model):
         for suggestion in self.suggestions:
             idea.append(Suggestion.serialize(suggestion))
         return dict(userId=self.userId, name=self.name, email=self.email, profileIcon=self.profileIcon, unit=self.unit,
-                    role=str(self.role.value), jobTitle=self.jobTitle, notifications=self.notifications, suggestions=idea,
+                    role=str(self.role.value), jobTitle=self.jobTitle, suggestions=idea,
                     created_projects=c_p, phoneNumber=self.phoneNumber)
 
     def serialize(self):
@@ -194,7 +185,7 @@ class Project(db.Model):
                                  lazy='subquery', back_populates="projects")
     title = db.Column(db.String, nullable=False)
     users = db.relationship('User', secondary=user_project,
-                            lazy='subquery', backref=db.backref('user_project', lazy=True))
+                            lazy='subquery', back_populates="projects")
     tasks = db.relationship('Task', backref='project', lazy=True)
     logbooks = db.relationship('LogBook', lazy=True, backref="project")
     importance = db.Column(db.String, nullable=False)
@@ -207,7 +198,6 @@ class Project(db.Model):
     # timeLine = db.Column(db.String, nullable = True) ##insert dates with , ex. "2023-04-10, 2023-05-10" --Felix
     status = db.Column(db.Enum(statusProject), nullable=False,
                        default=statusProject.not_yet_started)
-    documentation = db.relationship('Document', backref='project', lazy=True)
     deadline = db.Column(db.DateTime, nullable=True)
     startTime = db.Column(db.DateTime, nullable=True)
     links = db.relationship('Link', backref='project', lazy=True)
@@ -237,16 +227,16 @@ class Project(db.Model):
 
         return dict(projectId=self.projectId, title=self.title, users=user, tasks=task, creator_id=self.creator_id,
                     importance=self.importance, difference=self.difference, requirements=self.requirements,
-                    unit=self.unit, how_often=self.how_often, status=str(self.status.value), documnentation=self.documentation, deadline=self.deadline,
+                    unit=self.unit, how_often=self.how_often, status=str(self.status.value), deadline=self.deadline,
                     categories=c, startTime=self.startTime, evaluationExplanation=self.evaluationExplanation, evaluation=self.evaluation, evaluationSummary=self.evaluationSummary)
 
     # Function that populates table user_project_task_role:
-    def populate_user_project_role(self, user, role):
+    #def populate_user_project_role(self, user, role):
 
-        new_row = user_project.insert().values(
-            user_id=user.userId, project_id=self.projectId, user_role=role)
-        db.session.execute(new_row)
-        db.session.commit()
+    #    new_row = user_project.insert().values(
+    #        user_id=user.userId, project_id=self.projectId, user_role=role)
+    #    db.session.execute(new_row)
+    #    db.session.commit()
 
 
 class Task(db.Model): 
@@ -263,27 +253,44 @@ class Task(db.Model):
                     status = str(self.status.value), project_id = self.project_id, result = self.result, users = [u.serialize() for u in self.users])
 
 
-class Notification(db.Model):
+class BaseNotification(db.Model):
+    __tablename__ = 'base_notification'
     notificationId = db.Column(db.Integer, primary_key=True)
     message = db.Column(db.String, nullable=False)
     timestamp = db.Column(db.DateTime, default=datetime.utcnow)
     userId = db.Column(db.Integer, db.ForeignKey('user.userId'))
-    projectId = db.Column(db.Integer, db.ForeignKey('project.projectId'))
     read = db.Column(db.Boolean, default=False)
+
+    type = Column(String)
+
+    __mapper_args__ = {
+        'polymorphic_on': type,
+    }
+
+    def serialize(self):
+        pass
+
+class Notification(BaseNotification):
+    __tablename__ = 'notification'
+    projectId = db.Column(db.Integer, db.ForeignKey('project.projectId'))
+
+    __mapper_args__ = {
+        'polymorphic_identity': 'notification'
+    }
 
     def serialize(self):
         return dict(notificationId=self.notificationId, message=self.message, timestamp=self.timestamp, userId=self.userId, projectId=self.projectId)
 
+class AdminNotification(BaseNotification):
+    __tablename__ = 'admin_notification'
+    suggestionId = db.Column(db.Integer, db.ForeignKey('suggestion.suggestionId'))
 
-class Document(db.Model):
-    documentId = db.Column(db.Integer, primary_key=True)
-    documentName = db.Column(db.String, nullable=False)
-    timeStamp = db.Column(db.DateTime, default=datetime.utcnow)
-    project_id = db.Column(db.Integer, db.ForeignKey(
-        'project.projectId'), nullable=False)
+    __mapper_args__ = {
+        'polymorphic_identity': 'admin_notification'
+    }
 
     def serialize(self):
-        return dict(documentId=self.documentId, documentName=self.documentName, project_id=self.project_id)
+        return dict(notificationId=self.notificationId, message=self.message, timestamp=self.timestamp, userId=self.userId, suggestionId=self.suggestionId)
 
 class Link(db.Model):
     linkId = db.Column(db.Integer, primary_key=True)

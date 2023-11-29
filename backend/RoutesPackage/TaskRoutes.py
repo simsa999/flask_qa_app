@@ -1,13 +1,20 @@
+#####################################################
+#                                                   #
+#                     Company 4                     #
+#     Module for routes and views of Task model     #
+#                                                   #
+#####################################################
+
+
 from RoutesInterfaceIn import *
 
 ##################################### AppRoute for Task #############################################################
 
 
+# Add new task to project
 @app.route("/add_new_task/<int:project_id>", methods=["POST"])
 @cross_origin()
 def add_new_task(project_id):
-
-    # only to get 404 if the project do not exist
     Project.query.get_or_404(project_id)
     if request.method == "POST":
         data = request.get_json()
@@ -24,11 +31,11 @@ def add_new_task(project_id):
         return jsonify(Task.serialize(newTask))
     
 
+# Add a new result to a task
 @app.route("/add_new_result_to_task/<int:task_id>", methods=["PUT"])
 @cross_origin()
 def add_new_result(task_id):
 
-    # only to get 404 if the project do not exist
     task = Task.query.get_or_404(task_id)
     if request.method == "PUT":
         data = request.get_json()
@@ -37,6 +44,7 @@ def add_new_result(task_id):
         return jsonify(Task.serialize(task))
 
 
+# Get all tasks in the database
 @app.route("/get_all_tasks", methods=['GET'])
 def get_all_tasks():
     if request.method == 'GET':
@@ -46,7 +54,8 @@ def get_all_tasks():
             task.append(Task.serialize(t))
         return jsonify(task)
 
-
+# Get, edit or delete a specific task
+# DELETE is not properly implemented because a task should not be deleted
 @app.route("/task/<int:task_id>", methods=['PUT', 'GET', 'DELETE'])
 @cross_origin()
 def edit_delete_get_task(task_id):

@@ -1,12 +1,22 @@
+#####################################################
+#                                                   #
+#                     Company 4                     #
+#  Module for routes and views of Suggestion model  #
+#                                                   #
+#####################################################
+
+
 from RoutesInterfaceIn import *
 
 ##################################### AppRoute for Suggestions #############################################################
+
+# Create a new suggestion
 @app.route("/add_new_suggestion", methods=["POST"])
 @cross_origin()
 @jwt_required()
 def add_new_suggestion():
     user_id = get_jwt_identity()['userId']
-    User.query.get_or_404(user_id)  # only to get 404 if the user do not exist
+    User.query.get_or_404(user_id)  
     if request.method == "POST":
         data = request.get_json()
         print(data)
@@ -21,6 +31,11 @@ def add_new_suggestion():
                 newSuggestion.status = statusSuggestion.draft
             if data["status"] == 'Published':
                 newSuggestion.status = statusSuggestion.published
+                userUnit = User.query.get_or_404(user_id).unit
+                adminsInUnit = User.query.filter(User.unit == userUnit, User.role == Role.admin).all()      #Get all admins that are in the same unit as the user that created the suggestion
+                for admin in adminsInUnit:
+                    adminNotification = AdminNotification(userId=admin.userId, suggestionId=newSuggestion.suggestionId, message="Ett nytt förslag har publicerats: " + newSuggestion.name)
+                    db.session.add(adminNotification)                                                       #Create a notification for each admin that a new suggestion has been published
             if data["status"] == 'Archived':
                 newSuggestion.status = statusSuggestion.archived
         db.session.add(newSuggestion)
@@ -31,7 +46,7 @@ def add_new_suggestion():
         return jsonify({"suggestionId": newSuggestion.suggestionId})
 
 
-
+# Get all suggestions in the database
 @app.route("/get_all_suggestions", methods=['GET'])
 @cross_origin()
 def get_all_suggestions():
@@ -43,6 +58,8 @@ def get_all_suggestions():
         return jsonify(suggestion)
 
 
+# Get, edit or delete a specific suggestion
+# DELETE might not be properly implemented because a suggestion should not be deleted
 @app.route("/suggestion/<int:id>", methods=['PUT', 'GET', 'DELETE'])
 @cross_origin()
 def edit_delete_get_suggestion(id):
@@ -59,6 +76,7 @@ def edit_delete_get_suggestion(id):
         return jsonify("DELETE COMPLETE")
     
     
+# Get all suggestion drafts by a specific user
 @app.route("/get_all_utkast_by_user", methods=["GET"])
 @cross_origin()
 @jwt_required()
@@ -72,6 +90,7 @@ def get_all_utkast():
             suggestions.append(Suggestion.serialize(s))
         return jsonify(suggestions)
 
+# Get all published suggestions in the database
 @app.route("/get_all_published_suggestions", methods=["GET"])
 @cross_origin()
 def get_all_published():
@@ -82,6 +101,8 @@ def get_all_published():
             suggestions.append(Suggestion.serialize(s))
         return jsonify(suggestions)
 
+
+# Helper function to edit a suggestion
 def put_suggestion(data, suggestion, stat):
     
     keys_list = data.keys()
@@ -97,7 +118,13 @@ def put_suggestion(data, suggestion, stat):
         if data["status"] == 'Draft':
             suggestion.status = statusSuggestion.draft
         if data["status"] == 'Published':
-            suggestion.status = statusSuggestion.published
+            if suggestion.status != statusSuggestion.published:
+                suggestion.status = statusSuggestion.published
+                userUnit = User.query.get_or_404(suggestion.creator).unit
+                adminsInUnit = User.query.filter(User.unit == userUnit, User.role == Role.admin).all()              #Get all admins that are in the same unit as the user that created the suggestion
+                for admin in adminsInUnit:
+                    adminNotification = AdminNotification(userId=admin.userId, suggestionId=suggestion.suggestionId, message="Ett nytt förslag har publicerats: " + suggestion.name)
+                    db.session.add(adminNotification)                                                               #Create a notification for each admin that a new suggestion has been published
         if data["status"] == 'Archived':
             suggestion.status = statusSuggestion.archived
     if 'categories' in keys_list:
@@ -124,12 +151,19 @@ def put_suggestion(data, suggestion, stat):
     db.session.commit()
     return suggestion
 
+
+# Helper function to create a project from a suggestion
 def create_project_from_suggestion(suggestion):
     newProject = Project(title=suggestion.name, creator_id=suggestion.creator, importance=suggestion.descriptionImportance,
                              difference=suggestion.descriptionImpact, requirements=suggestion.descriptionRequirements, unit='N/A',
                              how_often='N/A', status=statusProject.utkast, categories = suggestion.categories)
+    newTask = Task(taskName="Mäta nuläget", taskDescription="Gör mätning på förbättringsarbetet!", status=statusTask.not_yet_started)
+    newProject.tasks.append(newTask)
+    db.session.add(newTask)
     return newProject
 
+
+# Create a new project from a suggestion
 @app.route("/start_project_from_suggestion", methods=['POST', 'PUT'])
 @cross_origin()
 @jwt_required()
@@ -138,14 +172,15 @@ def start_project_from_suggestion():
     User.query.get_or_404(user_id)
     data = request.get_json()
     print(data)
-    if request.method == 'PUT':
+    if request.method == 'PUT':                                         #If the suggestion already exists
         sugg = Suggestion.query.get_or_404(data["suggestionId"])
         suggestion = put_suggestion(data, sugg, statusSuggestion.archived)
         newProject = create_project_from_suggestion(suggestion)
         db.session.add(newProject)
         db.session.add(suggestion)
         db.session.commit() 
-    elif request.method == 'POST':
+    elif request.method == 'POST':                                      #If the suggestion does not exist
+                                                                        #Create a new suggestion and make it archived
         suggestion = Suggestion(name=data["title"], descriptionImportance=data["descriptionImportance"], descriptionImpact = data["descriptionImpact"], descriptionRequirements = data["descriptionRequirements"], creator=user_id, status = statusSuggestion.archived)
         if data['categories']:
             for category in data["categories"]:
@@ -159,3 +194,4 @@ def start_project_from_suggestion():
     db.session.commit()
 
     return jsonify({"projectId": newProject.projectId})
+

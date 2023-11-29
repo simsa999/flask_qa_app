@@ -25,7 +25,7 @@ x = requests.post(url + '/signup', headers=headers, json={
     "email": "assar.larsson@gmail.com",
     "name": "Assar Larsson",
     "role": "Admin",
-    "unit": "Kirurgiska kliniken",
+    "unit": "KAVA",
     "jobTitle": "Undersköterska",
     "password": "hej",
     'phoneNumber' : '0765881234'
@@ -294,7 +294,7 @@ read_responses.append(requests.post(
 read_responses.append(requests.post(
     url + '/add_user_to_task/2/1', headers=headers, json={}))
 read_responses.append(requests.post(
-    url + '/add_user_to_task/3/1', headers=headers, json={}))
+    url + '/add_user_to_task/7/1', headers=headers, json={}))
 read_responses.append(requests.post(
     url + '/add_user_to_task/8/1', headers=headers, json={}))
 read_responses.append(requests.post(

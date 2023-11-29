@@ -1,10 +1,19 @@
+#####################################################
+#                                                   #
+#                     Company 4                     #
+#     Module for routes and views of User model     #
+#                                                   #
+#####################################################
+
+
 from RoutesInterfaceIn import *
 from datetime import datetime, timedelta
 
 ##################################### AppRoute for user #############################################################
 
 
-# TODO: Now the route doesnt take password into account. Might not need route, since we have signup route. Incase of needing to use this route, add password to the route.
+#Add new user
+#Obsolete method, use signup instead
 @app.route("/add_new_user", methods=["POST"])
 @cross_origin()
 def add_user():
@@ -26,9 +35,7 @@ def add_user():
         db.session.commit()
         return jsonify(User.serialize(newUser))
 
-# GET ALL USERS
-
-
+#Get all users
 @app.route("/get_all_users", methods=["GET"])
 @cross_origin()
 def get_users():
@@ -39,9 +46,8 @@ def get_users():
             user.append(User.serialize(u))
         return jsonify(user)
 
-# EDIT; DELETE OR GET a specific user
-
-
+#Get or edit a specific user
+#DELETE is not properly implemented because a user should not be deleted
 @app.route("/user/<int:user_id>", methods=["GET", "PUT", "DELETE"])
 @cross_origin()
 def edit_delete_get_user(user_id):
@@ -80,13 +86,13 @@ def edit_delete_get_user(user_id):
 
 ################################## AppRoute for Authentication #########################################################
 
-
+#Signup a new user
 @app.route("/signup", methods=["POST"])
 def signup():
     if request.method == "POST":
         data = request.get_json()
         if not data["email"]:
-            return jsonify({"message": "Email is required"}), 400
+            return jsonify({"message": "Email is required"}), 400           #Handle errors if information is not provided
         if not data["password"]:
             return jsonify({"message": "Password is required"}), 400
         if not data["name"]:
@@ -96,7 +102,7 @@ def signup():
             return jsonify({"message": "Email already in use"}), 400
         keys_list = data.keys()
         if 'role' in keys_list:
-            if data['role'] == Role.admin.value:
+            if data['role'] == Role.admin.value:                            #Default role is user
                 role = Role.admin
             else:
                 role = Role.user
@@ -104,11 +110,9 @@ def signup():
         phoneNumber=None
         if 'phoneNumber' in keys_list:
             if len(data["phoneNumber"]) == 9:
-                phoneNumber = '+46' + data["phoneNumber"]
+                phoneNumber = '+46' + data["phoneNumber"]                   #Add country code if not provided
             elif len(data["phoneNumber"]) == 10:
                 phoneNumber = data["phoneNumber"]
-
-
 
         new_user = User(
             name=data["name"],
@@ -119,12 +123,13 @@ def signup():
             phoneNumber=phoneNumber,
 
         )
-        new_user.set_password(data["password"])
+        new_user.set_password(data["password"])                             #Hash password
         db.session.add(new_user)
         db.session.commit()
         return jsonify(new_user.serialize()), 200
 
 
+#Login a user
 @app.route("/login", methods=["POST"])
 @cross_origin()
 def login():
@@ -134,7 +139,7 @@ def login():
         password = data["password"]
         if user:
             if bcrypt.check_password_hash(user.password_hash, password):
-                expiration_delta = timedelta(hours=2)
+                expiration_delta = timedelta(hours=2)                       #Set expiration time for token to 2 hours
                 token = create_access_token(identity=user.serialize(), expires_delta=expiration_delta)
                 return jsonify(dict(user.serialize(), token=token))
             else:
@@ -142,6 +147,8 @@ def login():
         else:
             return jsonify({"message": "Invalid email"}), 401
         
+
+#Get logged in user to not use information in session storage in frontend (security reasons)
 @app.route("/logged_in_user", methods=["GET"])
 @cross_origin()
 @jwt_required()

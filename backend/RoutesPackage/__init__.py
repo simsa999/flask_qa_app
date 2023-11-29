@@ -1,3 +1,11 @@
+#####################################################
+#                                                   #
+#                     Company 4                     #
+# Initialization of all routes and views in the app #
+#                                                   #
+#####################################################
+
+
 from RoutesPackage.CategoryRoute import *
 from RoutesPackage.DatabaseClearingRoute import *
 from RoutesPackage.RatingRoutes import *

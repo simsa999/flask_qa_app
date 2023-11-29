@@ -1,7 +1,17 @@
+#####################################################
+#                                                   #
+#                     Company 4                     #
+#     Module for routes and views of Link model     #
+#                                                   #
+#####################################################
+
+
 from RoutesInterfaceIn import *
 
 ##################################### AppRoute for links #############################################################
     
+
+# Add new link to a project
 @app.route("/add_new_link/<int:project_id>", methods=['POST'])
 @cross_origin()
 def add_new_link(project_id):
@@ -14,6 +24,8 @@ def add_new_link(project_id):
         db.session.commit()
         return jsonify(Link.serialize(newLink))
     
+
+# Get all links in a project
 @app.route("/get_all_links_on_project/<int:project_id>", methods=['GET'])
 @cross_origin()
 def get_all_links_on_project(project_id):
@@ -23,6 +35,8 @@ def get_all_links_on_project(project_id):
         links = project.links
         return jsonify([Link.serialize(link) for link in links])
     
+
+# Get, edit or delete a specific link    
 @app.route("/link/<int:link_id>", methods=["GET", "PUT", "DELETE"])
 @cross_origin()
 def edit_delete_get_link(link_id):

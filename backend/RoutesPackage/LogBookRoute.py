@@ -1,7 +1,17 @@
+#####################################################
+#                                                   #
+#                     Company 4                     #
+#   Module for routes and views of LogBook model    #
+#                                                   #
+#####################################################
+
+
 from RoutesInterfaceIn import *
 
 ##################################### AppRoutes for LogBook #############################################################
 
+
+# Add new logbook to a project based on the logged in user
 @app.route("/add_new_logbook", methods=["POST"])
 @cross_origin()
 @jwt_required()
@@ -16,6 +26,8 @@ def add_new_logbook():
         db.session.commit()
         return jsonify(LogBook.serialize(newLogBook))
     
+
+# Get all logbooks in the database
 @app.route("/get_all_logbooks", methods=["GET"])
 @cross_origin()
 def get_all_logbooks():
@@ -26,6 +38,8 @@ def get_all_logbooks():
             logbook.append(LogBook.serialize(l))
         return jsonify(logbook)
     
+
+# Get, edit or delete a specific logbook
 @app.route("/logbook/<int:logbook_id>", methods=["GET", "PUT", "DELETE"])
 @cross_origin()
 def get_logbook(logbook_id):
@@ -51,6 +65,7 @@ def get_logbook(logbook_id):
         return jsonify(LogBook.serialize(logbook))
     
     
+# Get all logbooks on a specific project
 @app.route("/get_logbooks_on_project/<int:project_id>", methods=["GET"])
 @cross_origin()
 def get_logbooks_on_project(project_id):
