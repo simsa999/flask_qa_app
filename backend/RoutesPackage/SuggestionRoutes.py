@@ -19,7 +19,6 @@ def add_new_suggestion():
     User.query.get_or_404(user_id)  
     if request.method == "POST":
         data = request.get_json()
-        print(data)
         newSuggestion = Suggestion(name=data["title"], descriptionImportance=data["descriptionImportance"], creator=user_id)
         keys_list = data.keys()
         if 'descriptionImpact' in keys_list:
@@ -132,7 +131,6 @@ def put_suggestion(data, suggestion, stat):
         new_category_ids = []  
         for category in data["categories"]:
             new_category_ids.append(category.get("categoryId"))       
-        print(new_category_ids)
         # Create a copy of the current categories list
         current_categories = list(suggestion.categories)
 
@@ -171,7 +169,6 @@ def start_project_from_suggestion():
     user_id = get_jwt_identity()['userId']
     User.query.get_or_404(user_id)
     data = request.get_json()
-    print(data)
     if request.method == 'PUT':                                         #If the suggestion already exists
         sugg = Suggestion.query.get_or_404(data["suggestionId"])
         suggestion = put_suggestion(data, sugg, statusSuggestion.archived)

@@ -71,7 +71,6 @@ def edit_delete_get_task(task_id):
             task.taskDescription = data["taskDescription"]
         if 'status' in keys_list:
             if data['status'] == 'Not yet Started':
-                print("hej")
                 task.status = statusTask.not_yet_started
             if data['status'] == 'Finished':
                 task.status = statusTask.finished

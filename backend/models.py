@@ -154,8 +154,6 @@ class User(db.Model):
     tasks = db.relationship("Task", secondary=user_task,
                             back_populates="users")
     created_projects = db.relationship('Project', backref='user', lazy=True)
-    projects = db.relationship('Project', secondary=user_project,
-                                 back_populates="users", lazy=True)
 
     def serialize(self):
         idea = []
@@ -165,7 +163,7 @@ class User(db.Model):
         for suggestion in self.suggestions:
             idea.append(Suggestion.serialize(suggestion))
         return dict(userId=self.userId, name=self.name, email=self.email, profileIcon=self.profileIcon, unit=self.unit,
-                    role=str(self.role.value), jobTitle=self.jobTitle, suggestions=idea,
+                    role=str(self.role.value), jobTitle=self.jobTitle, notifications=self.notifications, suggestions=idea,
                     created_projects=c_p, phoneNumber=self.phoneNumber)
 
     def serialize(self):
@@ -185,7 +183,7 @@ class Project(db.Model):
                                  lazy='subquery', back_populates="projects")
     title = db.Column(db.String, nullable=False)
     users = db.relationship('User', secondary=user_project,
-                            lazy='subquery', back_populates="projects")
+                            lazy='subquery', backref=db.backref('user_project', lazy=True))
     tasks = db.relationship('Task', backref='project', lazy=True)
     logbooks = db.relationship('LogBook', lazy=True, backref="project")
     importance = db.Column(db.String, nullable=False)
@@ -231,12 +229,12 @@ class Project(db.Model):
                     categories=c, startTime=self.startTime, evaluationExplanation=self.evaluationExplanation, evaluation=self.evaluation, evaluationSummary=self.evaluationSummary)
 
     # Function that populates table user_project_task_role:
-    #def populate_user_project_role(self, user, role):
+    def populate_user_project_role(self, user, role):
 
-    #    new_row = user_project.insert().values(
-    #        user_id=user.userId, project_id=self.projectId, user_role=role)
-    #    db.session.execute(new_row)
-    #    db.session.commit()
+        new_row = user_project.insert().values(
+            user_id=user.userId, project_id=self.projectId, user_role=role)
+        db.session.execute(new_row)
+        db.session.commit()
 
 
 class Task(db.Model): 

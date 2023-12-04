@@ -20,4 +20,3 @@ from RoutesPackage.NotificationRoutes import *
 from RoutesPackage.MeasurementRoutes import *
 from RoutesPackage.LinkRoutes import *
 
-print("RoutePackage is being initialized")

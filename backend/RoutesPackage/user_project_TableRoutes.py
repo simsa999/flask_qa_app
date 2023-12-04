@@ -27,21 +27,12 @@ def add_user_to_project(user_id, project_id):
             user_role = ProjectRole.team_Member
         elif data['role'] == 'Viewer':
             user_role = ProjectRole.viewer
-        project.users.append(user)
-        db.session.commit()
-        populate_user_project_role(project, user, user_role)
+        Project.populate_user_project_role(project, user, user_role)
         notification = Notification(userId=user_id, projectId=project_id, message="Du har lagts till i förbättringsarbetet \"" + project.title + "\"")
         db.session.add(notification)                                    #Create a notification for the user
         db.session.commit()
 
         return jsonify("User added to project"), 200
-
-
-def populate_user_project_role(project, user, new_role):
-    db.session.query(user_project).filter(
-        user_project.c.user_id == user.userId,
-        user_project.c.project_id == project.projectId
-    ).update({"user_role": new_role})                                   #Update the role of the user on the project directly in the table
 
 
 # Change role of user on project
@@ -57,9 +48,9 @@ def change_role(user_id, project_id):
             new_role = ProjectRole.team_Member
         elif data['role'] == 'Viewer':
             new_role = ProjectRole.viewer
-        
-        populate_user_project_role(project,user,new_role)                        #Update the role of the user on the project directly in the table
-
+        statement = user_project.update().where((user_project.c.user_id == user.userId) & (user_project.c.project_id == project.projectId)
+                                                ).values(user_role=new_role)    #Update the role of the user on the project directly in the table
+        db.session.execute(statement)
         db.session.commit()
         return jsonify(Project.serialize(project))
 
@@ -71,7 +62,7 @@ def remove_user(user_id, project_id):
     if request.method == 'DELETE':
         user = User.query.get_or_404(user_id)
         project = Project.query.get_or_404(project_id)
-        tasks = project.tasks
+        tasks = Task.query.filter_by(project_id=project_id).all()
         for task in tasks:
             if user in task.users:
                 task.users.remove(user)                                 #Remove user from all their tasks in the project

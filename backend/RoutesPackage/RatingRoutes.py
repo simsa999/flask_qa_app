@@ -17,7 +17,6 @@ from RoutesInterfaceIn import *
 @jwt_required()
 def add_new_rating():
     if request.method == "POST":
-        print("inside add new rating")
         user_id = get_jwt_identity()['userId']
         data = request.get_json()
         rating = Rating(rating=data["rating"],

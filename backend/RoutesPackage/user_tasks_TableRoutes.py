@@ -64,7 +64,6 @@ def specify_users_for_task(task_id):
     if request.method == 'PUT':
         data = request.get_json()
         task = Task.query.get_or_404(task_id)
-        print(task.serialize())
 
         current_users = task.users
 

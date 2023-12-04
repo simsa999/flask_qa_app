@@ -173,15 +173,16 @@ def edit_delete_get_project(project_id):
 @jwt_required()
 def get_all_projects_by_user():
     if request.method == 'GET':
-        user_id = get_jwt_identity()["userId"]
-        user = User.query.get_or_404(user_id)
+        user = get_jwt_identity()
+    
+        rowsUserProject = db.session.query(user_project).filter( user_project.c.user_id == user['userId'], ).all()
+        project_ids = [row[1] for row in rowsUserProject]
         projects = []
-
-        projectsQuery = Project.query.filter_by(creator_id=user_id, status=statusProject.utkast).all()
+        projectsQuery = Project.query.filter_by(creator_id=user['userId'], status=statusProject.utkast).all()
         for p in projectsQuery: 
             projects.append(p.serialize())
-        for p in user.projects: 
-            projects.append(p.serialize())
+        for p in project_ids: 
+            projects.append(Project.query.get_or_404(p).serialize())
         return jsonify(projects)
     
 
